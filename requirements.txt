@@ -1,0 +1,14 @@
+Django==4.2.16
+djangorestframework==3.15.2
+drf-jwt==1.19.2
+django-cors-headers==4.4.0
+drf-spectacular==0.27.2
+celery==5.4.0
+django-celery-beat==2.6.0
+redis==5.0.1
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+requests==2.32.3
+pytest-django==4.8.0
+coverage==7.6.0
+flake8==7.1.0

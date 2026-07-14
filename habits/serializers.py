@@ -1,4 +1,3 @@
-from django.db import models
 from rest_framework import serializers
 
 from .models import Habit
@@ -6,7 +5,6 @@ from .models import Habit
 
 class HabitSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    is_public = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Habit
@@ -51,7 +49,7 @@ class HabitSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Связанная привычка должна быть приятной"
                 )
-            if data["related_habit"] == data.get("instance"):
+            if self.instance and data["related_habit"] == self.instance:
                 raise serializers.ValidationError(
                     "Привычка не может быть связана сама с собой"
                 )
@@ -70,6 +68,7 @@ class PublicHabitSerializer(serializers.ModelSerializer):
             "place",
             "time",
             "action",
+            "is_pleasant",
             "periodicity",
             "time_limit",
             "created_at",

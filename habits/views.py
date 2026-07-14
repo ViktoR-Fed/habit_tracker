@@ -38,7 +38,7 @@ class PublicHabitListView(generics.ListAPIView):
     pagination_class = HabitPagination
 
     def get_queryset(self):
-        return Habit.objects.filter(is_public=True, is_pleasant=False)
+        return Habit.objects.filter(is_public=True)
 
 
 class HabitListByPeriodView(generics.ListAPIView):

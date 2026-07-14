@@ -1,46 +1,27 @@
+import asyncio
 import logging
+
+from asgiref.sync import sync_to_async
 
 from habits.models import Habit
 from telegram_bot.bot import bot_instance
-from users.models import User
 
 logger = logging.getLogger(__name__)
 
 
-def send_habit_notifications():
-    """Отправка уведомлений о привычках"""
-    from datetime import datetime, timedelta
+@sync_to_async
+def get_habits_for_notification():
+    """Получение привычек для уведомлений (синхронная обертка)"""
+    from datetime import datetime
 
-    import pytz
+    current_time = datetime.now().time()
 
-    now = datetime.now()
-    current_time = now.time()
-
-    # Получаем все привычки, которые должны выполняться сейчас
-    habits = Habit.objects.select_related("user").filter(
-        time__hour=current_time.hour,
-        time__minute=current_time.minute,
+    return list(
+        Habit.objects.select_related("user").filter(
+            time__hour=current_time.hour,
+            time__minute=current_time.minute,
+        )
     )
-
-    sent_count = 0
-    for habit in habits:
-        # Проверяем периодичность
-        days_since_last = (now.date() - habit.created_at.date()).days
-        if days_since_last % habit.periodicity != 0:
-            continue
-
-        # Отправляем уведомление
-        user = habit.user
-        if user.telegram_chat_id:
-            message = create_habit_message(habit)
-            success = bot_instance.send_notification(user.telegram_chat_id, message)
-            if success:
-                sent_count += 1
-                logger.info(
-                    f"Notification sent for habit {habit.id} to user {user.username}"
-                )
-
-    return sent_count
 
 
 def create_habit_message(habit):
@@ -62,3 +43,41 @@ def create_habit_message(habit):
 
     message += f"\n💪 **Выполни привычку и стань лучше!**"
     return message
+
+
+def send_habit_notifications():
+    """Отправка уведомлений о привычках (синхронная обертка)"""
+    from datetime import datetime
+
+    try:
+        # Получаем привычки синхронно
+        habits = Habit.objects.select_related("user").filter(
+            time__hour=datetime.now().time().hour,
+            time__minute=datetime.now().time().minute,
+        )
+
+        sent_count = 0
+        for habit in habits:
+            user = habit.user
+            if user.telegram_chat_id:
+                message = create_habit_message(habit)
+                # Используем асинхронную отправку через asyncio
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    success = loop.run_until_complete(
+                        bot_instance.send_notification_async(
+                            user.telegram_chat_id, message
+                        )
+                    )
+                    loop.close()
+                    if success:
+                        sent_count += 1
+                        logger.info(f"Notification sent for habit {habit.id}")
+                except Exception as e:
+                    logger.error(f"Error sending notification: {e}")
+
+        return sent_count
+    except Exception as e:
+        logger.error(f"Error in send_habit_notifications: {e}")
+        return 0

@@ -138,10 +138,11 @@ CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:63
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
 CELERY_BEAT_SCHEDULE = {
     "send_habit_notifications": {
-        "task": "habits.tasks.send_habit_notifications",
-        "schedule": 60.0,  # Каждую минуту
+        "task": "habits.tasks.send_habit_notifications_task",
+        "schedule": 60.0,
     },
 }
 
